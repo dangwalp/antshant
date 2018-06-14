@@ -56,10 +56,12 @@ class Data:
                     if stem_instrument == self.target_inst:
                         print(stem_file, stem_instrument)
                         target_stem = "{}/{}/{}/{}".format(self.path,
-                            stem_dir.rsplit('_', 1), stem_dir, stem_file)
+                            "_".join(t for t in stem_dir.split('_')[:-1]),
+                            stem_dir, stem_file)
                     else:
                         other_stems.append("{}/{}/{}/{}".format(self.path,
-                            stem_dir.split('_')[-1:], stem_dir, stem_file))
+                            "_".join(t for t in stem_dir.split('_')[:-1]),
+                            stem_dir, stem_file))
                 # (Target instrument, [List of all other instruments of the same song])
                 medley_stems = (target_stem, other_stems)
             file_tuples.append(medley_stems)
