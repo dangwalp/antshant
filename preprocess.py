@@ -10,10 +10,22 @@ import numpy as np
 from config import ModelConfig
 import soundfile as sf
 
+
+def load_wav(filename, sec, sr=ModelConfig.SR):
+    print("Load {}".format(filename))
+    return np.array(_sample_range(_pad_wav(librosa.load(filename, sr=sr, mono=False)[0], sr, sec),
+        sr, sec))
+
+def mix_stems(wavs):
+    print("Mix {}".format(wavs))
+
+
 # Batch considered
 def get_random_wav(filenames, sec, sr=ModelConfig.SR):
-    # load wav -> pad if necessary to fit sr*sec -> get random samples with len = sr*sec -> map = do this for all in filenames -> put in np.array
-    src1_src2 = np.array(list(map(lambda f: _sample_range(_pad_wav(librosa.load(f, sr=sr, mono=False)[0], sr, sec), sr, sec), filenames)))
+    # load wav -> pad if necessary to fit sr*sec -> get random samples with len = sr*sec -> map = do
+    # this for all in filenames -> put in np.array
+    src1_src2 = np.array(list(map(lambda f: _sample_range(_pad_wav(librosa.load(f, sr=sr, mono=False)[0],
+        sr, sec), sr, sec), filenames)))
     mixed = np.array(list(map(lambda f: librosa.to_mono(f), src1_src2)))
     src1, src2 = src1_src2[:, 0], src1_src2[:, 1]
     return mixed, src1, src2
@@ -32,9 +44,12 @@ def to_wav_from_spec(stft_maxrix, len_hop=ModelConfig.L_HOP):
     return np.array(list(map(lambda s: librosa.istft(s, hop_length=len_hop), stft_maxrix)))
 
 # Batch considered
-def to_wav_mag_only(mag, init_phase, len_frame=ModelConfig.L_FRAME, len_hop=ModelConfig.L_HOP, num_iters=50):
-    #return np.array(list(map(lambda m_p: griffin_lim(m, len_frame, len_hop, num_iters=num_iters, phase_angle=p)[0], list(zip(mag, init_phase))[1])))
-    return np.array(list(map(lambda m: lambda p: griffin_lim(m, len_frame, len_hop, num_iters=num_iters, phase_angle=p), list(zip(mag, init_phase))[1])))
+def to_wav_mag_only(mag, init_phase, len_frame=ModelConfig.L_FRAME, len_hop=ModelConfig.L_HOP,
+    num_iters=50):
+    #return np.array(list(map(lambda m_p: griffin_lim(m, len_frame, len_hop, num_iters=num_iters,
+    #phase_angle=p)[0], list(zip(mag, init_phase))[1])))
+    return np.array(list(map(lambda m: lambda p: griffin_lim(m, len_frame, len_hop, num_iters=num_iters,
+        phase_angle=p), list(zip(mag, init_phase))[1])))
 
 # Batch considered
 def get_magnitude(stft_matrixes):

@@ -32,7 +32,7 @@ def eval():
         writer = tf.summary.FileWriter(EvalConfig.GRAPH_PATH, sess.graph)
 
         data = Data(EvalConfig.DATA_PATH)
-        mixed_wav, src1_wav, src2_wav, wavfiles = data.next_wavs(EvalConfig.SECONDS, EvalConfig.NUM_EVAL)
+        mixed_wav, src1_wav, src2_wav = data.next_wavs(EvalConfig.SECONDS, EvalConfig.NUM_EVAL)
 
         mixed_spec = to_spectrogram(mixed_wav)
         mixed_mag = get_magnitude(mixed_spec)
@@ -78,14 +78,6 @@ def eval():
             tf.summary.scalar('GNSDR_vocal', gnsdr[1])
             tf.summary.scalar('GSIR_vocal', gsir[1])
             tf.summary.scalar('GSAR_vocal', gsar[1])
-
-        if EvalConfig.WRITE_RESULT:
-            # Write the result
-            for i in range(len(wavfiles)):
-                name = wavfiles[i].replace('/', '-').replace('.wav', '')
-                write_wav(mixed_wav[i], '{}/{}-{}'.format(EvalConfig.RESULT_PATH, name, 'original'))
-                write_wav(pred_src1_wav[i], '{}/{}-{}'.format(EvalConfig.RESULT_PATH, name, 'music'))
-                write_wav(pred_src2_wav[i], '{}/{}-{}'.format(EvalConfig.RESULT_PATH, name, 'voice'))
 
         writer.add_summary(sess.run(tf.summary.merge_all()), global_step=global_step.eval())
 

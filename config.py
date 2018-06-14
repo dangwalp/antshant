@@ -20,10 +20,10 @@ class ModelConfig:
 
 # Train
 class TrainConfig:
-    CASE = str(ModelConfig.SEQ_LEN) + 'frames_ikala'
+    CASE = str(ModelConfig.SEQ_LEN) + 'frames_medleydb'
     CKPT_PATH = 'checkpoints/' + CASE
     GRAPH_PATH = 'graphs/' + CASE + '/train'
-    DATA_PATH = 'MedleyDB/train'
+    DATA_PATH = 'MedleyDB/Audio'
     LR = 0.0001
     FINAL_STEP = 100000
     CKPT_STEP = 50
@@ -43,14 +43,10 @@ class TrainConfig:
 # TODO config for each case
 # Eval
 class EvalConfig:
-    # CASE = '1frame'
-    # CASE = '4-frames-masking-layer'
-    CASE = str(ModelConfig.SEQ_LEN) + 'frames_ikala'
+    CASE = str(ModelConfig.SEQ_LEN) + 'frames_medleydb'
     CKPT_PATH = 'checkpoints/' + CASE
     GRAPH_PATH = 'graphs/' + CASE + '/eval'
-    DATA_PATH = 'MedleyDB/eval'
-    # DATA_PATH = 'dataset/mir-1k/Wavfile'
-    # DATA_PATH = 'dataset/ikala'
+    DATA_PATH = 'MedleyDB/Audio'
     GRIFFIN_LIM = False
     GRIFFIN_LIM_ITER = 1000
     NUM_EVAL = 9

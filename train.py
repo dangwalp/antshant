@@ -9,6 +9,7 @@ import tensorflow as tf
 from model import Model
 import os
 import shutil
+import argparse
 from data import Data
 from preprocess import to_spectrogram, get_magnitude
 from utils import Diff
@@ -16,7 +17,7 @@ from config import TrainConfig
 
 
 # TODO multi-gpu
-def train():
+def train(data_path, instrument):
     # Model
     model = Model()
 
@@ -37,11 +38,11 @@ def train():
         writer = tf.summary.FileWriter(TrainConfig.GRAPH_PATH, sess.graph)
 
         # Input source
-        data = Data(TrainConfig.DATA_PATH)
+        data = Data("{}/{}".format(data_path, TrainConfig.DATA_PATH), instrument)
 
         loss = Diff()
         for step in range(global_step.eval(), TrainConfig.FINAL_STEP):
-            mixed_wav, src1_wav, src2_wav, _ = data.next_wavs(TrainConfig.SECONDS, TrainConfig.NUM_WAVFILE)
+            mixed_wav, src1_wav, src2_wav = data.next_wavs(TrainConfig.SECONDS, TrainConfig.NUM_WAVFILE)
 
             mixed_spec = to_spectrogram(mixed_wav)
             mixed_mag = get_magnitude(mixed_spec)
@@ -91,5 +92,10 @@ def setup_path():
 
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-d", "--data_path", help="path to MedleyDB", default='/data', type=str, dest='dp')
+    parser.add_argument("-i", "--instrument", help="target instrument", default='acoustic guitar', type=str, dest='inst')
+    args = parser.parse_args()
+
     setup_path()
-    train()
+    train(data_path=args.dp, instrument=args.inst)
