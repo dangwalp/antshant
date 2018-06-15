@@ -12,12 +12,12 @@ import soundfile as sf
 
 
 def load_wav(filename, sec, sr=ModelConfig.SR):
-    print("Load {}".format(filename))
-    return np.array(_sample_range(_pad_wav(librosa.load(filename, sr=sr, mono=False)[0], sr, sec),
+    print("Loading {}".format(filename))
+    return np.array(_sample_range(_pad_wav(librosa.load(filename, sr=sr, mono=True)[0], sr, sec),
         sr, sec))
 
 def mix_stems(wavs):
-    print("Mix {}".format(wavs))
+    return sum(wavs)
 
 
 # Batch considered

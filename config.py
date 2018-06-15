@@ -12,7 +12,7 @@ from utils import closest_power_of_two
 # TODO tf arg
 # Model
 class ModelConfig:
-    SR = 44100 # default: 16000
+    SR = 16000 # MedleyDB: 44100
     L_FRAME = 1024
     L_HOP = closest_power_of_two(L_FRAME / 4)
     SEQ_LEN = 4

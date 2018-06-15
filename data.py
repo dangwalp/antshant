@@ -28,9 +28,9 @@ class Data:
         src2 = mix_stems(other)
 
         src1 = load_wav(rnd_medley[0], sec, ModelConfig.SR) # target
-        all_stems = other.append(src1)
+        other.append(src1)
         
-        mixed = mix_stems(all_stems)
+        mixed = mix_stems(other)
 
         return mixed, src1, src2
 
