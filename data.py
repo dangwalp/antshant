@@ -5,11 +5,12 @@ By Dabi Ahn. andabi412@gmail.com.
 https://www.github.com/andabi
 '''
 
-import yaml
+#import yaml
 import random
 from os import walk
 from config import ModelConfig
 from preprocess import load_wavs, load_and_mix_stems
+from ruamel.yaml import YAML
 
 
 class Data:
@@ -25,10 +26,10 @@ class Data:
         #                        |....... song 1 ...............| song 2
         
         src1 = load_wavs([med[0] for med in rnd_medleys], sec, ModelConfig.SR)
-        print("Loaded all target stems.", end='\r')
+        #print("Loaded all target stems.")
 
         src2 = load_and_mix_stems([med[1] for med in rnd_medleys], sec, ModelConfig.SR)
-        print("Loaded all other stems as already mixed.", end='\r')
+        #print("Loaded all other stems as already mixed.")
 
         all_medleys = []
         for stl in rnd_medleys:
@@ -38,7 +39,7 @@ class Data:
             stems.append(stl[0])
             all_medleys.append(stems)
         mixed = load_and_mix_stems(all_medleys, sec, ModelConfig.SR)
-        print("Loaded full mixes of stems.")
+        #print("Loaded full mixes of stems.")
 
         return mixed, src1, src2
 
@@ -51,31 +52,29 @@ class Data:
 
         file_tuples = []
         for y in yamlfiles:
-            try:
-                with open(y, 'rb') as yf:
-                    whole = yaml.load(yf)
-                    stem_dir = whole['stem_dir']
-                    stems = whole['stems']
+            with open(y, 'rb') as yf:
+                yaml = YAML(typ='safe')
+                whole = yaml.load(yf)
+                stem_dir = whole['stem_dir']
+                stems = whole['stems']
 
-                    other_stems = []
-                    for st in stems.values():
-                        stem_file = st["filename"]
-                        stem_instrument = st["instrument"]
+                other_stems = []
+                for st in stems.values():
+                    stem_file = st["filename"]
+                    stem_instrument = st["instrument"]
 
-                        if stem_instrument == self.target_inst:
-                            print(stem_file, stem_instrument)
-                            target_stem = "{}/{}/{}/{}".format(self.path,
-                                "_".join(t for t in stem_dir.split('_')[:-1]),
-                                stem_dir, stem_file)
-                        else:
-                            other_stems.append("{}/{}/{}/{}".format(self.path,
-                                "_".join(t for t in stem_dir.split('_')[:-1]),
-                                stem_dir, stem_file))
-                    # (Target instrument, [List of all other instruments of the same song])
-                    medley_stems = (target_stem, other_stems)
-                file_tuples.append(medley_stems)
-            except UnicodeDecodeError:
-                print("Unicode Error.")
+                    if stem_instrument == self.target_inst:
+                        print(stem_file, stem_instrument)
+                        target_stem = "{}/{}/{}/{}".format(self.path,
+                            "_".join(t for t in stem_dir.split('_')[:-1]),
+                            stem_dir, stem_file)
+                    else:
+                        other_stems.append("{}/{}/{}/{}".format(self.path,
+                            "_".join(t for t in stem_dir.split('_')[:-1]),
+                            stem_dir, stem_file))
+                # (Target instrument, [List of all other instruments of the same song])
+                medley_stems = (target_stem, other_stems)
+            file_tuples.append(medley_stems)
 
         print("")
         return file_tuples
