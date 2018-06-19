@@ -54,6 +54,7 @@ class Data:
         for y in yamlfiles:
             with open(y, 'r') as yf:
                 yaml = YAML(typ='safe')
+                print("Current YAML: {}".format(yf))
                 whole = yaml.load(yf)
                 stem_dir = whole['stem_dir']
                 stems = whole['stems']
