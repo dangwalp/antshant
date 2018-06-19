@@ -25,10 +25,10 @@ class Data:
         #                        |....... song 1 ...............| song 2
         
         src1 = load_wavs([med[0] for med in rnd_medleys], sec, ModelConfig.SR)
-        print("Loaded all target stems.")
+        print("Loaded all target stems.", end='\r')
 
         src2 = load_and_mix_stems([med[1] for med in rnd_medleys], sec, ModelConfig.SR)
-        print("Loaded all other stems as already mixed.")
+        print("Loaded all other stems as already mixed.", end='\r')
 
         all_medleys = []
         for stl in rnd_medleys:
@@ -38,7 +38,7 @@ class Data:
             stems.append(stl[0])
             all_medleys.append(stems)
         mixed = load_and_mix_stems(all_medleys, sec, ModelConfig.SR)
-        print("Loaded full mixes of stems.\n")
+        print("Loaded full mixes of stems.")
 
         return mixed, src1, src2
 
