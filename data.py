@@ -48,13 +48,14 @@ class Data:
         print("Target stems:")
         yamlfiles = []
         for (root, dirs, files) in walk(self.path):
-            yamlfiles.extend(['{}/{}'.format(root, f) for f in files if f.endswith(".yaml")])
+            yamlfiles.extend(['{}/{}'.format(root, f) for f in files if f.endswith(".yaml")
+                and not f.startswith("._")])
 
         file_tuples = []
         for y in yamlfiles:
             with open(y, 'r') as yf:
                 yaml = YAML(typ='safe')
-                print("Current YAML: {}".format(yf))
+                #print("Current YAML: {}".format(yf))
                 whole = yaml.load(yf)
                 stem_dir = whole['stem_dir']
                 stems = whole['stems']
