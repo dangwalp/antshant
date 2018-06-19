@@ -51,28 +51,31 @@ class Data:
 
         file_tuples = []
         for y in yamlfiles:
-            with open(y, 'r') as yf:
-                whole = yaml.load(yf)
-                stem_dir = whole['stem_dir']
-                stems = whole['stems']
+            try:
+                with open(y, 'rb') as yf:
+                    whole = yaml.load(yf)
+                    stem_dir = whole['stem_dir']
+                    stems = whole['stems']
 
-                other_stems = []
-                for st in stems.values():
-                    stem_file = st["filename"]
-                    stem_instrument = st["instrument"]
+                    other_stems = []
+                    for st in stems.values():
+                        stem_file = st["filename"]
+                        stem_instrument = st["instrument"]
 
-                    if stem_instrument == self.target_inst:
-                        print(stem_file, stem_instrument)
-                        target_stem = "{}/{}/{}/{}".format(self.path,
-                            "_".join(t for t in stem_dir.split('_')[:-1]),
-                            stem_dir, stem_file)
-                    else:
-                        other_stems.append("{}/{}/{}/{}".format(self.path,
-                            "_".join(t for t in stem_dir.split('_')[:-1]),
-                            stem_dir, stem_file))
-                # (Target instrument, [List of all other instruments of the same song])
-                medley_stems = (target_stem, other_stems)
-            file_tuples.append(medley_stems)
+                        if stem_instrument == self.target_inst:
+                            print(stem_file, stem_instrument)
+                            target_stem = "{}/{}/{}/{}".format(self.path,
+                                "_".join(t for t in stem_dir.split('_')[:-1]),
+                                stem_dir, stem_file)
+                        else:
+                            other_stems.append("{}/{}/{}/{}".format(self.path,
+                                "_".join(t for t in stem_dir.split('_')[:-1]),
+                                stem_dir, stem_file))
+                    # (Target instrument, [List of all other instruments of the same song])
+                    medley_stems = (target_stem, other_stems)
+                file_tuples.append(medley_stems)
+            except UnicodeDecodeError:
+                print("Unicode Error.")
 
         print("")
         return file_tuples
