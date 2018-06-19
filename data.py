@@ -9,7 +9,7 @@ import yaml
 import random
 from os import walk
 from config import ModelConfig
-from preprocess import load_wav, mix_stems
+from preprocess import load_wavs, load_and_mix_stems
 
 
 class Data:
@@ -19,24 +19,32 @@ class Data:
         self.file_tuples = self.stems_from_yaml()
 
     def next_wavs(self, sec, size=1):
-        rnd_medley = random.sample(self.file_tuples, size)[0]
+        rnd_medleys = random.sample(self.file_tuples, size)
 
-        other = []
-        for f in rnd_medley[1]:
-            w = load_wav(f, sec, ModelConfig.SR)
-            other.append(w)
-        src2 = mix_stems(other)
-
-        src1 = load_wav(rnd_medley[0], sec, ModelConfig.SR) # target
-        other.append(src1)
+        # Input: List of tuples [(target, [other1, other2, ...]), ...]
+        #                        |....... song 1 ...............| song 2
         
-        mixed = mix_stems(other)
+        src1 = load_wavs([med[0] for med in rnd_medleys], sec, ModelConfig.SR)
+        print("Loaded all target stems.")
+
+        src2 = load_and_mix_stems([med[1] for med in rnd_medleys], sec, ModelConfig.SR)
+        print("Loaded all other stems as already mixed.")
+
+        all_medleys = []
+        for stl in rnd_medleys:
+            stems = []
+            for el in stl[1]:
+                stems.append(el)
+            stems.append(stl[0])
+            all_medleys.append(stems)
+        mixed = load_and_mix_stems(all_medleys, sec, ModelConfig.SR)
+        print("Loaded full mixes of stems.\n")
 
         return mixed, src1, src2
 
     def stems_from_yaml(self):
-        print("Retrieving audiofiles from yaml...")
-        print("Target stems: \n")
+        print("Retrieving audiofiles from yaml...\n")
+        print("Target stems:")
         yamlfiles = []
         for (root, dirs, files) in walk(self.path):
             yamlfiles.extend(['{}/{}'.format(root, f) for f in files if f.endswith(".yaml")])

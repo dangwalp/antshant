@@ -11,24 +11,20 @@ from config import ModelConfig
 import soundfile as sf
 
 
-def load_wav(filename, sec, sr=ModelConfig.SR):
-    print("Loading {}".format(filename))
-    return np.array(_sample_range(_pad_wav(librosa.load(filename, sr=sr, mono=True)[0], sr, sec),
-        sr, sec))
-
-def mix_stems(wavs):
-    return sum(wavs)
-
-
-# Batch considered
-def get_random_wav(filenames, sec, sr=ModelConfig.SR):
-    # load wav -> pad if necessary to fit sr*sec -> get random samples with len = sr*sec -> map = do
-    # this for all in filenames -> put in np.array
-    src1_src2 = np.array(list(map(lambda f: _sample_range(_pad_wav(librosa.load(f, sr=sr, mono=False)[0],
+def load_wavs(filenames, sec, sr=ModelConfig.SR):
+    return np.array(list(map(lambda f: _sample_range(_pad_wav(librosa.load(f, sr=sr, mono=True)[0],
         sr, sec), sr, sec), filenames)))
-    mixed = np.array(list(map(lambda f: librosa.to_mono(f), src1_src2)))
-    src1, src2 = src1_src2[:, 0], src1_src2[:, 1]
-    return mixed, src1, src2
+
+def load_and_mix_stems(stem_lists, sec, sr=ModelConfig.SR):
+    other_mixes = []
+    for stl in stem_lists:
+        medley_stems = []
+        for stem_file in stl:
+            medley_stems.append(_sample_range(_pad_wav(librosa.load(stem_file, sr=sr, mono=True)[0],
+                sr, sec), sr, sec))
+        other_mixes.append(sum(medley_stems))
+    return np.array(other_mixes)
+
 
 # Batch considered
 def to_spectrogram(wav, len_frame=ModelConfig.L_FRAME, len_hop=ModelConfig.L_HOP):
