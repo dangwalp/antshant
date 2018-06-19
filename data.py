@@ -52,7 +52,7 @@ class Data:
 
         file_tuples = []
         for y in yamlfiles:
-            with open(y, 'rb') as yf:
+            with open(y, 'r') as yf:
                 yaml = YAML(typ='safe')
                 whole = yaml.load(yf)
                 stem_dir = whole['stem_dir']
