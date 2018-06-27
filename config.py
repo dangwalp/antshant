@@ -16,7 +16,7 @@ class ModelConfig:
     L_FRAME = 1024
     L_HOP = closest_power_of_two(L_FRAME / 4)
     SEQ_LEN = 4
-    MED_LIMIT = 3
+    MED_LIMIT = 5
 
 
 # Train
@@ -50,7 +50,7 @@ class EvalConfig:
     DATA_PATH = 'MedleyDB/Audio'
     GRIFFIN_LIM = False
     GRIFFIN_LIM_ITER = 1000
-    NUM_EVAL = 9
+    NUM_EVAL = 2
     SECONDS = 60
     RE_EVAL = True
     EVAL_METRIC = False
