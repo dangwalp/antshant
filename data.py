@@ -58,6 +58,8 @@ class Data:
         for (root, dirs, files) in walk(self.path):
             yamlfiles.extend(['{}/{}'.format(root, f) for f in files if f.endswith(".yaml")
                 and not f.startswith("._")])
+            if len(yamlfiles) >= ModelConfig.MED_LIMIT:
+                break
 
         file_tuples = []
         for y in yamlfiles:
@@ -84,7 +86,7 @@ class Data:
                             stem_dir, stem_file))
                 # (Target instrument, [List of all other instruments of the same song])
                 medley_stems = (target_stem, other_stems)
-            file_tuples.append(medley_stems)
-
+            if medley_stems[0] and medley_stems[1]:
+                file_tuples.append(medley_stems)
         print("")
         return file_tuples

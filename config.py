@@ -16,6 +16,7 @@ class ModelConfig:
     L_FRAME = 1024
     L_HOP = closest_power_of_two(L_FRAME / 4)
     SEQ_LEN = 4
+    MED_LIMIT = 3
 
 
 # Train
