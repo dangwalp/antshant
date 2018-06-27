@@ -60,7 +60,9 @@ class Data:
 
         file_tuples = []
         for y in yamlfiles:
-            medley_stems = tuple()
+            medley_stems = None
+            target_stem = None
+            other_stems = []
             if len(file_tuples) >= ModelConfig.MED_LIMIT:
                 break
             with open(y, 'r') as yf:
@@ -70,7 +72,6 @@ class Data:
                 stem_dir = whole['stem_dir']
                 stems = whole['stems']
 
-                other_stems = []
                 for st in stems.values():
                     stem_file = st["filename"]
                     stem_instrument = st["instrument"]
