@@ -91,7 +91,6 @@ def eval(data_path, instrument):
         if EvalConfig.WRITE_RESULT:
             # Write the result
             for i in range(len(mixed_wav)):
-                name = wavfiles[i].replace('/', '-').replace('.wav', '')
                 write_wav(mixed_wav[i], '{}/{}-{}'.format(EvalConfig.RESULT_PATH, name,
                     'all_stems_mixed'))
                 write_wav(pred_src1_wav[i], '{}/{}-{}'.format(EvalConfig.RESULT_PATH, name,
