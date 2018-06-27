@@ -58,12 +58,11 @@ class Data:
         for (root, dirs, files) in walk(self.path):
             yamlfiles.extend(['{}/{}'.format(root, f) for f in files if f.endswith(".yaml")
                 and not f.startswith("._")])
-            if len(yamlfiles) >= ModelConfig.MED_LIMIT:
-                break
 
         file_tuples = []
         for y in yamlfiles:
             with open(y, 'r') as yf:
+                medley_stems = tuple()
                 yaml = YAML(typ='safe')
                 #print("Current YAML: {}".format(yf))
                 whole = yaml.load(yf)
@@ -76,7 +75,7 @@ class Data:
                     stem_instrument = st["instrument"]
 
                     if stem_instrument == self.target_inst:
-                        print(stem_file, stem_instrument)
+                        print(stem_instrument, stem_file)
                         target_stem = "{}/{}/{}/{}".format(self.path,
                             "_".join(t for t in stem_dir.split('_')[:-1]),
                             stem_dir, stem_file)
@@ -86,7 +85,10 @@ class Data:
                             stem_dir, stem_file))
                 # (Target instrument, [List of all other instruments of the same song])
                 medley_stems = (target_stem, other_stems)
-            if medley_stems[0] and medley_stems[1]:
-                file_tuples.append(medley_stems)
+            if len(file_tuples) >= ModelConfig.MED_LIMIT:
+                break
+            if medley_stems:
+                if medley_stems[0] and medley_stems[1]:
+                    file_tuples.append(medley_stems)
         print("")
         return file_tuples
