@@ -27,7 +27,7 @@ class Data:
         #                        |....... song 1 ...............| song 2
         cache = []
         for med in self.file_tuples:
-            print("Loading {}\n".format(med))
+            print("Loading\t{}\nand other stems from the same directory.\n".format(med[0]))
             stems = []
             target_stem = load_wav(med[0], sec)
             for stem in med[1]:
@@ -64,6 +64,7 @@ class Data:
             target_stem = None
             other_stems = []
             if len(file_tuples) >= ModelConfig.MED_LIMIT:
+                print("Maximum medley limit of {} reached.".format(ModelConfig.MED_LIMIT))
                 break
             with open(y, 'r') as yf:
                 yaml = YAML(typ='safe')

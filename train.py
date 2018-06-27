@@ -72,6 +72,7 @@ def train(data_path, instrument):
 
             # Save state
             if step % TrainConfig.CKPT_STEP == 0:
+                print("Saved checkpoint.")
                 tf.train.Saver().save(sess, TrainConfig.CKPT_PATH + '/checkpoint',
                     global_step=step)
 

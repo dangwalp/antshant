@@ -15,7 +15,8 @@ from config import EvalConfig, ModelConfig
 from data import Data
 from mir_eval.separation import bss_eval_sources
 from model import Model
-from preprocess import to_spectrogram, get_magnitude, get_phase, to_wav_mag_only, soft_time_freq_mask, to_wav, write_wav
+from preprocess import to_spectrogram, get_magnitude, get_phase, to_wav_mag_only
+from preprocess import soft_time_freq_mask, to_wav, write_wav
 
 
 def eval(data_path, instrument):
@@ -40,9 +41,11 @@ def eval(data_path, instrument):
         mixed_batch, padded_mixed_mag = model.spec_to_batch(mixed_mag)
         mixed_phase = get_phase(mixed_spec)
 
-        assert (np.all(np.equal(model.batch_to_spec(mixed_batch, EvalConfig.NUM_EVAL), padded_mixed_mag)))
+        assert (np.all(np.equal(model.batch_to_spec(mixed_batch, EvalConfig.NUM_EVAL),
+            padded_mixed_mag)))
 
-        (pred_src1_mag, pred_src2_mag) = sess.run(model(), feed_dict={model.x_mixed: mixed_batch})
+        (pred_src1_mag, pred_src2_mag) = sess.run(model(),
+            feed_dict={model.x_mixed: mixed_batch})
 
         seq_len = mixed_phase.shape[-1]
         pred_src1_mag = model.batch_to_spec(pred_src1_mag, EvalConfig.NUM_EVAL)[:, :, :seq_len]
@@ -57,20 +60,25 @@ def eval(data_path, instrument):
 
         # (magnitude, phase) -> spectrogram -> wav
         if EvalConfig.GRIFFIN_LIM:
-            pred_src1_wav = to_wav_mag_only(pred_src1_mag, init_phase=mixed_phase, num_iters=EvalConfig.GRIFFIN_LIM_ITER)
-            pred_src2_wav = to_wav_mag_only(pred_src2_mag, init_phase=mixed_phase, num_iters=EvalConfig.GRIFFIN_LIM_ITER)
+            pred_src1_wav = to_wav_mag_only(pred_src1_mag, init_phase=mixed_phase,
+                num_iters=EvalConfig.GRIFFIN_LIM_ITER)
+            pred_src2_wav = to_wav_mag_only(pred_src2_mag, init_phase=mixed_phase,
+                num_iters=EvalConfig.GRIFFIN_LIM_ITER)
         else:
             pred_src1_wav = to_wav(pred_src1_mag, mixed_phase)
             pred_src2_wav = to_wav(pred_src2_mag, mixed_phase)
 
         # Write the result
         tf.summary.audio('GT_mixed', mixed_wav, ModelConfig.SR, max_outputs=EvalConfig.NUM_EVAL)
-        tf.summary.audio('Pred_music', pred_src1_wav, ModelConfig.SR, max_outputs=EvalConfig.NUM_EVAL)
-        tf.summary.audio('Pred_vocal', pred_src2_wav, ModelConfig.SR, max_outputs=EvalConfig.NUM_EVAL)
+        tf.summary.audio('Pred_music', pred_src1_wav, ModelConfig.SR,
+            max_outputs=EvalConfig.NUM_EVAL)
+        tf.summary.audio('Pred_vocal', pred_src2_wav, ModelConfig.SR,
+            max_outputs=EvalConfig.NUM_EVAL)
 
         if EvalConfig.EVAL_METRIC:
             # Compute BSS metrics
-            gnsdr, gsir, gsar = bss_eval_global(mixed_wav, src1_wav, src2_wav, pred_src1_wav, pred_src2_wav)
+            gnsdr, gsir, gsar = bss_eval_global(mixed_wav, src1_wav, src2_wav, pred_src1_wav,
+                pred_src2_wav)
 
             # Write the score of BSS metrics
             tf.summary.scalar('GNSDR_music', gnsdr[0])
@@ -79,6 +87,17 @@ def eval(data_path, instrument):
             tf.summary.scalar('GNSDR_vocal', gnsdr[1])
             tf.summary.scalar('GSIR_vocal', gsir[1])
             tf.summary.scalar('GSAR_vocal', gsar[1])
+
+        if EvalConfig.WRITE_RESULT:
+            # Write the result
+            for i in range(len(wavfiles)):
+                name = wavfiles[i].replace('/', '-').replace('.wav', '')
+                write_wav(mixed_wav[i], '{}/{}-{}'.format(EvalConfig.RESULT_PATH, name,
+                    'all_stems_mixed'))
+                write_wav(pred_src1_wav[i], '{}/{}-{}'.format(EvalConfig.RESULT_PATH, name,
+                    'target_instrument'))
+                write_wav(pred_src2_wav[i], '{}/{}-{}'.format(EvalConfig.RESULT_PATH, name,
+                    'other_stems_mixed'))
 
         writer.add_summary(sess.run(tf.summary.merge_all()), global_step=global_step.eval())
 
