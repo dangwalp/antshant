@@ -7,7 +7,6 @@ https://www.github.com/andabi
 
 import os
 import shutil
-
 import numpy as np
 import tensorflow as tf
 
@@ -18,7 +17,7 @@ from model import Model
 from preprocess import to_spectrogram, get_magnitude, get_phase, to_wav_mag_only, soft_time_freq_mask, to_wav, write_wav
 
 
-def eval():
+def eval(data_path, instrument):
     # Model
     model = Model()
     global_step = tf.Variable(0, dtype=tf.int32, trainable=False, name='global_step')
@@ -31,8 +30,9 @@ def eval():
 
         writer = tf.summary.FileWriter(EvalConfig.GRAPH_PATH, sess.graph)
 
-        data = Data(EvalConfig.DATA_PATH)
-        mixed_wav, src1_wav, src2_wav = data.next_wavs(EvalConfig.SECONDS, EvalConfig.NUM_EVAL)
+        data = Data("{}/{}".format(data_path, EvalConfig.DATA_PATH), instrument,
+            EvalConfig.SECONDS)
+        mixed_wav, src1_wav, src2_wav = data.next_wavs(EvalConfig.NUM_EVAL)
 
         mixed_spec = to_spectrogram(mixed_wav)
         mixed_mag = get_magnitude(mixed_spec)
@@ -119,5 +119,12 @@ def setup_path():
 
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-d", "--data_path", help="path to MedleyDB",
+        default='/data', type=str, dest='dp')
+    parser.add_argument("-i", "--instrument", help="target instrument",
+        default='acoustic guitar', type=str, dest='inst')
+    args = parser.parse_args()
+
     setup_path()
-    eval()
+    eval(data_path=args.dp, instrument=args.inst)

@@ -6,14 +6,15 @@ https://www.github.com/andabi
 '''
 
 import tensorflow as tf
-from model import Model
 import os
 import shutil
 import argparse
+
+from config import TrainConfig
 from data import Data
+from model import Model
 from preprocess import to_spectrogram, get_magnitude
 from utils import Diff
-from config import TrainConfig
 
 
 # TODO multi-gpu
