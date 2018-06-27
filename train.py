@@ -24,7 +24,8 @@ def train(data_path, instrument):
     # Loss, Optimizer
     global_step = tf.Variable(0, dtype=tf.int32, trainable=False, name='global_step')
     loss_fn = model.loss()
-    optimizer = tf.train.AdamOptimizer(learning_rate=TrainConfig.LR).minimize(loss_fn, global_step=global_step)
+    optimizer = tf.train.AdamOptimizer(learning_rate=TrainConfig.LR).minimize(loss_fn,
+        global_step=global_step)
 
     # Summaries
     summary_op = summaries(model, loss_fn)
@@ -38,11 +39,14 @@ def train(data_path, instrument):
         writer = tf.summary.FileWriter(TrainConfig.GRAPH_PATH, sess.graph)
 
         # Input source
-        data = Data("{}/{}".format(data_path, TrainConfig.DATA_PATH), instrument)
+        data = Data("{}/{}".format(data_path, TrainConfig.DATA_PATH), instrument,
+            TrainConfig.SECONDS)
+
+        print("Starting training...")
 
         loss = Diff()
         for step in range(global_step.eval(), TrainConfig.FINAL_STEP):
-            mixed_wav, src1_wav, src2_wav = data.next_wavs(TrainConfig.SECONDS, TrainConfig.NUM_WAVFILE)
+            mixed_wav, src1_wav, src2_wav = data.next_wavs(TrainConfig.NUM_WAVFILE)
 
             mixed_spec = to_spectrogram(mixed_wav)
             mixed_mag = get_magnitude(mixed_spec)
@@ -55,17 +59,20 @@ def train(data_path, instrument):
             mixed_batch, _ = model.spec_to_batch(mixed_mag)
 
             l, _, summary = sess.run([loss_fn, optimizer, summary_op],
-                                     feed_dict={model.x_mixed: mixed_batch, model.y_src1: src1_batch,
+                                     feed_dict={model.x_mixed: mixed_batch,
+                                                model.y_src1: src1_batch,
                                                 model.y_src2: src2_batch})
 
             loss.update(l)
-            print('step-{}\td_loss={:2.2f}\tloss={}'.format(step, loss.diff * 100, loss.value))
+            print('step-{}\td_loss={:2.2f}\tloss={}'.format(step, loss.diff * 100,
+                loss.value))
 
             writer.add_summary(summary, global_step=step)
 
             # Save state
             if step % TrainConfig.CKPT_STEP == 0:
-                tf.train.Saver().save(sess, TrainConfig.CKPT_PATH + '/checkpoint', global_step=step)
+                tf.train.Saver().save(sess, TrainConfig.CKPT_PATH + '/checkpoint',
+                    global_step=step)
 
         writer.close()
 
@@ -93,8 +100,10 @@ def setup_path():
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("-d", "--data_path", help="path to MedleyDB", default='/data', type=str, dest='dp')
-    parser.add_argument("-i", "--instrument", help="target instrument", default='acoustic guitar', type=str, dest='inst')
+    parser.add_argument("-d", "--data_path", help="path to MedleyDB",
+        default='/data', type=str, dest='dp')
+    parser.add_argument("-i", "--instrument", help="target instrument",
+        default='acoustic guitar', type=str, dest='inst')
     args = parser.parse_args()
 
     setup_path()

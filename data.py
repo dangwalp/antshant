@@ -7,44 +7,52 @@ https://www.github.com/andabi
 
 #import yaml
 import random
+import numpy as np
 from os import walk
 from config import ModelConfig
-from preprocess import load_wavs, load_and_mix_stems
+from preprocess import load_wav
 from ruamel.yaml import YAML
 
 
 class Data:
-    def __init__(self, path, target_inst):
+    def __init__(self, path, target_inst, sec):
         self.path = path
         self.target_inst = target_inst
         self.file_tuples = self.stems_from_yaml()
+        self.pwavs = self.prep_all_wavs(sec)
 
-    def next_wavs(self, sec, size=1):
-        rnd_medleys = random.sample(self.file_tuples, size)
-
+    def prep_all_wavs(self, sec):
+        print("Preparing and caching audio files...")
         # Input: List of tuples [(target, [other1, other2, ...]), ...]
         #                        |....... song 1 ...............| song 2
-        
-        src1 = load_wavs([med[0] for med in rnd_medleys], sec, ModelConfig.SR)
-        #print("Loaded all target stems.")
-
-        src2 = load_and_mix_stems([med[1] for med in rnd_medleys], sec, ModelConfig.SR)
-        #print("Loaded all other stems as already mixed.")
-
-        all_medleys = []
-        for stl in rnd_medleys:
+        cache = []
+        for med in self.file_tuples:
+            print("Loading {}\n".format(med))
             stems = []
-            for el in stl[1]:
-                stems.append(el)
-            stems.append(stl[0])
-            all_medleys.append(stems)
-        mixed = load_and_mix_stems(all_medleys, sec, ModelConfig.SR)
-        #print("Loaded full mixes of stems.")
+            target_stem = load_wav(med[0], sec)
+            for stem in med[1]:
+                other_stem = load_wav(stem, sec)
+                stems.append(other_stem)
+            mix_other = sum(stems)
+            stems.append(target_stem)
+            mix_all = sum(stems)
+            cache.append((mix_all, target_stem, mix_other))
+        # Output: List of tuples [(mixed, src1, src2), ...]
+        print("Done preparing audio files.")
+        return cache
 
-        return mixed, src1, src2
+    def next_wavs(self, size=1):
+        # Sample from preprocessed (already loaded) wav files and put into np.array
+        rnd_medleys = random.sample(self.pwavs, size)
+        mixed, src1, src2 = [], [], []
+        for med in rnd_medleys:
+            mixed.append(med[0])
+            src1.append(med[1])
+            src2.append(med[2])
+        return np.array(mixed), np.array(src1), np.array(src2)
 
     def stems_from_yaml(self):
-        print("Retrieving audiofiles from yaml...\n")
+        print("Retrieving audio files from yaml...\n")
         print("Target stems:")
         yamlfiles = []
         for (root, dirs, files) in walk(self.path):
