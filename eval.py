@@ -5,10 +5,11 @@ By Dabi Ahn. andabi412@gmail.com.
 https://www.github.com/andabi
 '''
 
+import tensorflow as tf
+import numpy as np
 import os
 import shutil
-import numpy as np
-import tensorflow as tf
+import argparse
 
 from config import EvalConfig, ModelConfig
 from data import Data
