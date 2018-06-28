@@ -91,12 +91,11 @@ def eval(data_path, instrument):
         if EvalConfig.WRITE_RESULT:
             # Write the result
             for i in range(len(mixed_wav)):
-                name = mixed_wav[i].replace('/', '-').replace('.wav', '')
-                write_wav(mixed_wav[i], '{}/{}-{}'.format(EvalConfig.RESULT_PATH, name,
+                write_wav(mixed_wav[i], '{}/{}'.format(EvalConfig.RESULT_PATH,
                     'all_stems_mixed'))
-                write_wav(pred_src1_wav[i], '{}/{}-{}'.format(EvalConfig.RESULT_PATH, name,
+                write_wav(pred_src1_wav[i], '{}/{}'.format(EvalConfig.RESULT_PATH,
                     'target_instrument'))
-                write_wav(pred_src2_wav[i], '{}/{}-{}'.format(EvalConfig.RESULT_PATH, name,
+                write_wav(pred_src2_wav[i], '{}/{}'.format(EvalConfig.RESULT_PATH,
                     'other_stems_mixed'))
 
         writer.add_summary(sess.run(tf.summary.merge_all()), global_step=global_step.eval())

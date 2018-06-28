@@ -9,11 +9,13 @@ import librosa
 import numpy as np
 import soundfile as sf
 from config import ModelConfig
-#from functools import lru_cache
 
 
-def load_wav(f, sec, sr=ModelConfig.SR):
-    return _sample_range(_pad_wav(librosa.load(f, sr=sr, mono=True)[0], sr, sec), sr, sec)
+def load_wav(f, sec, sr=ModelConfig.SR, med_st=None):
+    ## Same "start" and "end" for all wavs of one medley!
+    wav, med_st = _sample_range(_pad_wav(librosa.load(f, sr=sr, mono=True)[0], sr, sec), sr, sec,
+        med_st)
+    return wav, med_st
 
 
 # Batch considered
@@ -97,19 +99,21 @@ def _pad_wav(wav, sr, duration):
     else:
         pad_width = ((0, 0), (0, pad_len))
     wav = np.pad(wav, pad_width=pad_width, mode='constant', constant_values=0)
-
     return wav
 
 
-def _sample_range(wav, sr, duration):
+def _sample_range(wav, sr, duration, med_start):
     assert(wav.ndim <= 2)
 
     target_len = int(sr * duration)
     wav_len = wav.shape[-1]
-    start = np.random.choice(range(np.maximum(1, wav_len - target_len)), 1)[0]
+    if med_start:
+        start = med_start
+    else:
+        start = np.random.choice(range(np.maximum(1, wav_len - target_len)), 1)[0]
     end = start + target_len
     if wav.ndim == 1:
         wav = wav[start:end]
     else:
         wav = wav[:, start:end]
-    return wav
+    return wav, start

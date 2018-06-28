@@ -5,9 +5,12 @@ By Dabi Ahn. andabi412@gmail.com.
 https://www.github.com/andabi
 '''
 
-#import yaml
 import random
 import numpy as np
+import librosa
+import librosa.display
+import sounddevice as sd
+import matplotlib.pyplot as plt
 from os import walk
 from config import ModelConfig
 from preprocess import load_wav
@@ -15,11 +18,13 @@ from ruamel.yaml import YAML
 
 
 class Data:
-    def __init__(self, path, target_inst, sec):
+    def __init__(self, path, target_inst, sec, vis=False):
         self.path = path
         self.target_inst = target_inst
         self.file_tuples = self.stems_from_yaml()
         self.pwavs = self.prep_all_wavs(sec)
+        if vis:
+            self.visualize_wavs(self.pwavs, ModelConfig.SR)
 
     def prep_all_wavs(self, sec):
         print("Preparing and caching audio files...")
@@ -29,9 +34,9 @@ class Data:
         for med in self.file_tuples:
             print("Loading\t{}\nand other stems from the same directory.\n".format(med[0]))
             stems = []
-            target_stem = load_wav(med[0], sec)
+            target_stem, med_start = load_wav(med[0], sec)
             for stem in med[1]:
-                other_stem = load_wav(stem, sec)
+                other_stem, _ = load_wav(stem, sec, med_st=med_start)
                 stems.append(other_stem)
             mix_other = sum(stems)
             stems.append(target_stem)
@@ -92,3 +97,15 @@ class Data:
                     file_tuples.append(medley_stems)
         print("")
         return file_tuples
+
+    def visualize_wavs(self, wavs, sr):
+        for med in wavs:
+            mixed, src1, src2 = med
+            plt.subplot(311)
+            librosa.display.waveplot(librosa.to_mono(src1[:10*sr]), sr)
+            plt.subplot(312)
+            librosa.display.waveplot(librosa.to_mono(src2[:10*sr]), sr)
+            plt.subplot(313)
+            librosa.display.waveplot(librosa.to_mono(mixed[:10*sr]), sr)
+            plt.show()
+            input("Visualization done.")
