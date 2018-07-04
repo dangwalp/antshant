@@ -34,27 +34,39 @@ class Data:
         for med in self.file_tuples:
             print("Loading\t{}\nand other stems from the same directory.\n".format(med[0]))
             stems = []
+
+            # Target
             target_stem, med_start = load_wav(med[0], sec)
+            
+            # Other
             for stem in med[1]:
                 other_stem, _ = load_wav(stem, sec, med_st=med_start)
                 stems.append(other_stem)
             mix_other = sum(stems)
+            
+            # All
             stems.append(target_stem)
             mix_all = sum(stems)
-            cache.append((mix_all, target_stem, mix_other))
-        # Output: List of tuples [(mixed, src1, src2), ...]
+
+            # Medley name (for output files)
+            med_name = ("".join(med[0].split('_')[:-2])).split('/')[-1]
+
+            # Put everything together
+            cache.append((mix_all, target_stem, mix_other, med_name))
+            # Output: List of tuples [(mixed, src1, src2, name), ...]
         print("Done preparing audio files.")
         return cache
 
     def next_wavs(self, size=1):
         # Sample from preprocessed (already loaded) wav files and put into np.array
         rnd_medleys = random.sample(self.pwavs, size)
-        mixed, src1, src2 = [], [], []
+        mixed, src1, src2, medname = [], [], [], []
         for med in rnd_medleys:
             mixed.append(med[0])
             src1.append(med[1])
             src2.append(med[2])
-        return np.array(mixed), np.array(src1), np.array(src2)
+            medname.append(med[3])
+        return np.array(mixed), np.array(src1), np.array(src2), medname
 
     def stems_from_yaml(self):
         print("\nRetrieving {} audio files from yaml...".format(self.target_inst))

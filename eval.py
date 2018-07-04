@@ -34,7 +34,7 @@ def eval(data_path, instrument):
 
         data = Data("{}/{}".format(data_path, EvalConfig.DATA_PATH), instrument,
             EvalConfig.SECONDS)
-        mixed_wav, src1_wav, src2_wav = data.next_wavs(EvalConfig.NUM_EVAL)
+        mixed_wav, src1_wav, src2_wav, med_names = data.next_wavs(EvalConfig.NUM_EVAL)
 
         mixed_spec = to_spectrogram(mixed_wav)
         mixed_mag = get_magnitude(mixed_spec)
@@ -90,12 +90,12 @@ def eval(data_path, instrument):
 
         if EvalConfig.WRITE_RESULT:
             # Write the result
-            for i in range(len(mixed_wav)):
-                write_wav(mixed_wav[i], '{}/{}'.format(EvalConfig.RESULT_PATH,
+            for i in range(len(med_names)):
+                write_wav(mixed_wav[i], '{}/{}-{}'.format(EvalConfig.RESULT_PATH, med_names[i],
                     'all_stems_mixed'))
-                write_wav(pred_src1_wav[i], '{}/{}'.format(EvalConfig.RESULT_PATH,
+                write_wav(pred_src1_wav[i], '{}/{}-{}'.format(EvalConfig.RESULT_PATH, med_names[i],
                     'target_instrument'))
-                write_wav(pred_src2_wav[i], '{}/{}'.format(EvalConfig.RESULT_PATH,
+                write_wav(pred_src2_wav[i], '{}/{}-{}'.format(EvalConfig.RESULT_PATH, med_names[i],
                     'other_stems_mixed'))
 
         writer.add_summary(sess.run(tf.summary.merge_all()), global_step=global_step.eval())
