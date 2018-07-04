@@ -8,9 +8,9 @@ https://www.github.com/andabi
 import random
 import numpy as np
 import librosa
-import librosa.display
-import sounddevice as sd
-import matplotlib.pyplot as plt
+#import librosa.display
+#import sounddevice as sd
+#import matplotlib.pyplot as plt
 from os import walk
 from config import ModelConfig
 from preprocess import load_wav
