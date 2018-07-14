@@ -8,10 +8,9 @@ https://www.github.com/andabi
 import librosa
 import numpy as np
 import soundfile as sf
-from config import ModelConfig
 
 
-def load_wav(f, sec, sr=ModelConfig.SR, med_st=None):
+def load_wav(f, sec, sr, med_st=None):
     ## Same "start" and "end" for all wavs of one medley!
     wav, med_st = _sample_range(_pad_wav(librosa.load(f, sr=sr, mono=True)[0], sr, sec), sr, sec,
         med_st)
@@ -19,24 +18,23 @@ def load_wav(f, sec, sr=ModelConfig.SR, med_st=None):
 
 
 # Batch considered
-def to_spectrogram(wav, len_frame=ModelConfig.L_FRAME, len_hop=ModelConfig.L_HOP):
+def to_spectrogram(wav, len_frame, len_hop):
     return np.array(list(map(lambda w: librosa.stft(w, n_fft=len_frame, hop_length=len_hop), wav)))
 
 
 # Batch considered
-def to_wav(mag, phase, len_hop=ModelConfig.L_HOP):
+def to_wav(mag, phase, len_hop):
     stft_matrix = get_stft_matrix(mag, phase)
     return np.array(list(map(lambda s: librosa.istft(s, hop_length=len_hop), stft_matrix)))
 
 
 # Batch considered
-def to_wav_from_spec(stft_maxrix, len_hop=ModelConfig.L_HOP):
+def to_wav_from_spec(stft_maxrix, len_hop):
     return np.array(list(map(lambda s: librosa.istft(s, hop_length=len_hop), stft_maxrix)))
 
 
 # Batch considered
-def to_wav_mag_only(mag, init_phase, len_frame=ModelConfig.L_FRAME, len_hop=ModelConfig.L_HOP,
-    num_iters=50):
+def to_wav_mag_only(mag, init_phase, len_frame, len_hop, num_iters=50):
     #return np.array(list(map(lambda m_p: griffin_lim(m, len_frame, len_hop, num_iters=num_iters,
     #phase_angle=p)[0], list(zip(mag, init_phase))[1])))
     return np.array(list(map(lambda m: lambda p: griffin_lim(m, len_frame, len_hop,
@@ -70,7 +68,7 @@ def hard_time_freq_mask(target_src, remaining_src):
     return mask
 
 
-def write_wav(data, path, sr=ModelConfig.SR, format='wav', subtype='PCM_16'):
+def write_wav(data, path, sr, format='wav', subtype='PCM_16'):
     sf.write('{}.wav'.format(path), data, sr, format=format, subtype=subtype)
 
 

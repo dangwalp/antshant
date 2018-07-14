@@ -6,23 +6,26 @@ https://www.github.com/andabi
 '''
 
 from __future__ import division
+
 import tensorflow as tf
-from tensorflow.contrib.rnn import GRUCell, MultiRNNCell
-from config import ModelConfig
-import os
-from utils import shape
 import numpy as np
+import os
+
+from tensorflow.contrib.rnn import GRUCell, MultiRNNCell
+
+from utils import shape
 
 
 class Model:
-    def __init__(self, n_rnn_layer=3, hidden_size=256):
+    def __init__(self, sample_rate, len_frame, seq_len, n_rnn_layer=3, hidden_size=256):
 
         # Input, Output
-        self.x_mixed = tf.placeholder(tf.float32, shape=(None, None, ModelConfig.L_FRAME // 2 + 1), name='x_mixed')
-        self.y_src1 = tf.placeholder(tf.float32, shape=(None, None, ModelConfig.L_FRAME // 2 + 1), name='y_src1')
-        self.y_src2 = tf.placeholder(tf.float32, shape=(None, None, ModelConfig.L_FRAME // 2 + 1), name='y_src2')
+        self.x_mixed = tf.placeholder(tf.float32, shape=(None, None, len_frame // 2 + 1), name='x_mixed')
+        self.y_src1 = tf.placeholder(tf.float32, shape=(None, None, len_frame // 2 + 1), name='y_src1')
+        self.y_src2 = tf.placeholder(tf.float32, shape=(None, None, len_frame // 2 + 1), name='y_src2')
 
         # Network
+        self.seq_len = seq_len
         self.hidden_size = hidden_size
         self.n_layer = n_rnn_layer
         self.net = tf.make_template('net', self._net)
@@ -49,21 +52,21 @@ class Model:
         pred_y_src1, pred_y_src2 = self()
         return tf.reduce_mean(tf.square(self.y_src1 - pred_y_src1) + tf.square(self.y_src2 - pred_y_src2), name='loss')
 
-    @staticmethod
+    #@staticmethod
     # shape = (batch_size, n_freq, n_frames) => (batch_size, n_frames, n_freq)
-    def spec_to_batch(src):
+    def spec_to_batch(self, src):
         num_wavs, freq, n_frames = src.shape
 
         # Padding
         pad_len = 0
-        if n_frames % ModelConfig.SEQ_LEN > 0:
-            pad_len = (ModelConfig.SEQ_LEN - (n_frames % ModelConfig.SEQ_LEN))
+        if n_frames % self.seq_len > 0:
+            pad_len = (self.seq_len - (n_frames % self.seq_len))
         pad_width = ((0, 0), (0, 0), (0, pad_len))
         padded_src = np.pad(src, pad_width=pad_width, mode='constant', constant_values=0)
 
-        assert(padded_src.shape[-1] % ModelConfig.SEQ_LEN == 0)
+        assert(padded_src.shape[-1] % self.seq_len == 0)
 
-        batch = np.reshape(padded_src.transpose(0, 2, 1), (-1, ModelConfig.SEQ_LEN, freq))
+        batch = np.reshape(padded_src.transpose(0, 2, 1), (-1, self.seq_len, freq))
         return batch, padded_src
 
     @staticmethod

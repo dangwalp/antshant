@@ -11,22 +11,24 @@ import librosa
 #import librosa.display
 #import sounddevice as sd
 #import matplotlib.pyplot as plt
+
 from os import walk
-from config import ModelConfig
-from preprocess import load_wav
 from ruamel.yaml import YAML
+
+from preprocess import load_wav
 
 
 class Data:
-    def __init__(self, path, target_inst, sec, vis=False):
+    def __init__(self, path, target_inst, med_limit, sr, sec, vis=False):
         self.path = path
         self.target_inst = target_inst
+        self.med_limit = med_limit
         self.file_tuples = self.stems_from_yaml()
-        self.pwavs = self.prep_all_wavs(sec)
+        self.pwavs = self.prep_all_wavs(sec, sr)
         if vis:
-            self.visualize_wavs(self.pwavs, ModelConfig.SR)
+            self.visualize_wavs(self.pwavs, sr)
 
-    def prep_all_wavs(self, sec):
+    def prep_all_wavs(self, sec, sr):
         print("Preparing and caching audio files...")
         # Input: List of tuples [(target, [other1, other2, ...]), ...]
         #                        |....... song 1 ...............| song 2
@@ -36,11 +38,11 @@ class Data:
             stems = []
 
             # Target
-            target_stem, med_start = load_wav(med[0], sec)
+            target_stem, med_start = load_wav(med[0], sec, sr)
             
             # Other
             for stem in med[1]:
-                other_stem, _ = load_wav(stem, sec, med_st=med_start)
+                other_stem, _ = load_wav(stem, sec, sr, med_st=med_start)
                 stems.append(other_stem)
             mix_other = sum(stems)
             
@@ -75,13 +77,16 @@ class Data:
             yamlfiles.extend(['{}/{}'.format(root, f) for f in files if f.endswith(".yaml")
                 and not f.startswith("._")])
 
+        if len(yamlfiles) == 0:
+            raise ValueError("No YAML files found in {}".format(self.path))
+
         file_tuples = []
         for y in yamlfiles:
             medley_stems = None
             target_stem = None
             other_stems = []
-            if len(file_tuples) >= ModelConfig.MED_LIMIT:
-                print("Maximum medley limit of {} reached.".format(ModelConfig.MED_LIMIT))
+            if len(file_tuples) >= self.med_limit:
+                print("Maximum medley limit of {} reached.".format(self.med_limit))
                 break
             with open(y, 'r') as yf:
                 yaml = YAML(typ='safe')

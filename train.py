@@ -7,52 +7,48 @@ https://www.github.com/andabi
 
 import tensorflow as tf
 import os
-import shutil
 import argparse
+import datetime
 
-from config import TrainConfig
+from config import GeneralConfig
 from data import Data
 from model import Model
 from preprocess import to_spectrogram, get_magnitude
-from utils import Diff
+from utils import Diff, closest_power_of_two
 
 
-# TODO multi-gpu
-def train(data_path, instrument):
-    # Model
-    model = Model()
+def train(model, data, Config, lr, eps, num_wav, len_frame):
+    len_hop = closest_power_of_two(len_frame / 4)
 
     # Loss, Optimizer
     global_step = tf.Variable(0, dtype=tf.int32, trainable=False, name='global_step')
     loss_fn = model.loss()
-    optimizer = tf.train.AdamOptimizer(learning_rate=TrainConfig.LR).minimize(loss_fn,
+    optimizer = tf.train.AdamOptimizer(learning_rate=lr).minimize(loss_fn,
         global_step=global_step)
 
-    # Summaries
     summary_op = summaries(model, loss_fn)
 
-    with tf.Session(config=TrainConfig.session_conf) as sess:
+    with tf.Session() as sess:
 
-        # Initialized, Load state
         sess.run(tf.global_variables_initializer())
-        model.load_state(sess, TrainConfig.CKPT_PATH)
 
-        writer = tf.summary.FileWriter(TrainConfig.GRAPH_PATH, sess.graph)
+        if not os.path.exists(Config.CKPT_PATH):
+            os.makedirs(Config.CKPT_PATH)
+        model.load_state(sess, Config.CKPT_PATH)
 
-        # Input source
-        data = Data("{}/{}".format(data_path, TrainConfig.DATA_PATH), instrument,
-            TrainConfig.SECONDS)
+        writer = tf.summary.FileWriter("{}/{}".format(Config.GRAPH_PATH, "train"), sess.graph)
 
         print("Starting training...")
 
         loss = Diff()
-        for step in range(global_step.eval(), TrainConfig.FINAL_STEP):
-            mixed_wav, src1_wav, src2_wav, _ = data.next_wavs(TrainConfig.NUM_WAVFILE)
+        for step in range(global_step.eval(), eps):
+            mixed_wav, src1_wav, src2_wav, _ = data.next_wavs(num_wav)
 
-            mixed_spec = to_spectrogram(mixed_wav)
+            mixed_spec = to_spectrogram(mixed_wav, len_frame, len_hop)
             mixed_mag = get_magnitude(mixed_spec)
 
-            src1_spec, src2_spec = to_spectrogram(src1_wav), to_spectrogram(src2_wav)
+            src1_spec = to_spectrogram(src1_wav, len_frame, len_hop)
+            src2_spec = to_spectrogram(src2_wav, len_frame, len_hop)
             src1_mag, src2_mag = get_magnitude(src1_spec), get_magnitude(src2_spec)
 
             src1_batch, _ = model.spec_to_batch(src1_mag)
@@ -71,9 +67,9 @@ def train(data_path, instrument):
             writer.add_summary(summary, global_step=step)
 
             # Save state
-            if step % TrainConfig.CKPT_STEP == 0:
+            if step % Config.CKPT_STEP == 0:
                 print("Saved checkpoint.")
-                tf.train.Saver().save(sess, TrainConfig.CKPT_PATH + '/checkpoint',
+                tf.train.Saver().save(sess, Config.CKPT_PATH + '/checkpoint',
                     global_step=step)
 
         writer.close()
@@ -90,23 +86,52 @@ def summaries(model, loss):
     return tf.summary.merge_all()
 
 
-def setup_path():
-    if TrainConfig.RE_TRAIN:
-        if os.path.exists(TrainConfig.CKPT_PATH):
-            shutil.rmtree(TrainConfig.CKPT_PATH)
-        if os.path.exists(TrainConfig.GRAPH_PATH):
-            shutil.rmtree(TrainConfig.GRAPH_PATH)
-    if not os.path.exists(TrainConfig.CKPT_PATH):
-        os.makedirs(TrainConfig.CKPT_PATH)
-
-
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("-d", "--data_path", help="path to MedleyDB",
-        default='/data', type=str, dest='dp')
-    parser.add_argument("-i", "--instrument", help="target instrument",
-        default='acoustic guitar', type=str, dest='inst')
-    args = parser.parse_args()
 
-    setup_path()
-    train(data_path=args.dp, instrument=args.inst)
+    # Data
+    parser.add_argument("-dp", "--data_path", help="path to MedleyDB root",
+        default='/data', type=str, dest='dp')
+    parser.add_argument("-inst", "--instrument", help="target instrument",
+        default='acoustic guitar', type=str, dest='inst')
+    parser.add_argument("-lfr", "--l_frame", help="l_frame",
+        default=1024, type=int, dest='lfr')
+    parser.add_argument("-sql", "--seq_len", help="sequence length",
+        default=4, type=int, dest='sql')
+    parser.add_argument("-mdl", "--med_limit", help="max medleys for training",
+        default=5, type=int, dest='mdl')
+    parser.add_argument("-sr", "--sample_rate",
+        help="sample rate (MedleyDB original: 44100)", default=16000, type=int,
+        dest='sr')
+    parser.add_argument("-sec", "--seconds", help="length of snippet from audio",
+        default=30, type=int, dest='sec')
+
+    # Model
+    parser.add_argument("-lay", "--layers", help="number of RNN layers",
+        default=3, type=int, dest='layers')
+    parser.add_argument("-hid", "--hidden", help="hidden size",
+        default=256, type=int, dest='hidden')
+
+    # Training
+    parser.add_argument("-lr", "--learning_rate", help="learning rate",
+        default=0.0001, type=float, dest='lr')
+    parser.add_argument("-eps", "--epochs", help="number of steps",
+        default=100000, type=int, dest='eps')
+    parser.add_argument("-nwav", "--num_wav", help="number of input files",
+        default=1, type=int, dest='nwav')
+
+    args = parser.parse_args()
+    for arg in sorted(vars(args)):
+        print(arg, getattr(args, arg))
+
+    conf = GeneralConfig("{}_{}".format((args.inst).replace(' ', '-'),
+        str(datetime.datetime.now()).split('.')[0].replace(' ', '-')))
+
+    data = Data("{}/{}".format(args.dp, conf.AUDIOFILES_PATH), args.inst,
+        args.mdl, args.sr, args.sec)
+
+    model = Model(sample_rate=args.sr, len_frame=args.lfr, seq_len=args.sql,
+        n_rnn_layer=args.layers, hidden_size=args.hidden)
+
+    train(model, data, conf, lr=args.lr, eps=args.eps, num_wav=args.nwav,
+        len_frame=args.lfr)
