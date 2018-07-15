@@ -1,9 +1,5 @@
-# -*- coding: utf-8 -*-
-#!/usr/bin/env python
-'''
-By Dabi Ahn. andabi412@gmail.com.
-https://www.github.com/andabi
-'''
+import os
+import csv
 
 
 class GeneralConfig:
@@ -14,8 +10,15 @@ class GeneralConfig:
         self.CKPT_STEP = 100
         self.GRIFFIN_LIM = False
         self.GRIFFIN_LIM_ITER = 1000
-        self.RE_EVAL = True
-        self.EVAL_METRIC = True
-        self.WRITE_RESULT = True
         self.RESULT_PATH = 'results/' + case
         print("Created config: {}".format(case))
+
+
+def get_train_conf():
+    latest_result = sorted(os.listdir('checkpoints'))[-1]
+    try:
+        with open("configs/{}.log".format(latest_result, 'r')) as cfile:
+            tconf = dict(csv.reader(cfile, delimiter='\t'))
+            return tconf
+    except FileNotFoundError:
+        print("Run train.py before evaluating.")

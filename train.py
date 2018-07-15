@@ -121,17 +121,32 @@ if __name__ == '__main__':
         default=1, type=int, dest='nwav')
 
     args = parser.parse_args()
-    for arg in sorted(vars(args)):
-        print(arg, getattr(args, arg))
 
-    conf = GeneralConfig("{}_{}".format((args.inst).replace(' ', '-'),
-        str(datetime.datetime.now()).split('.')[0].replace(' ', '-')))
+    # Other config
+    case = "{}_{}".format((args.inst).replace(' ', '-'),
+        str(datetime.datetime.now()).split('.')[0].replace(' ', '-'))
+    conf = GeneralConfig(case)
+    # Writing config log
+    config_dir = 'configs'
+    if not os.path.exists(config_dir):
+        os.makedirs(config_dir)
+    with open('{}/{}.log'.format(config_dir, case), 'w') as cfile:
+        for arg in sorted(vars(args)):
+            print(arg, getattr(args, arg))
+            cfile.write("{}\t{}\n".format(arg, getattr(args, arg)))
+        for k,v in conf.__dict__.items():
+            print(k, v)
+            cfile.write("{}\t{}\n".format(k,v))
+        print("")
 
+    # Create dataset object
     data = Data("{}/{}".format(args.dp, conf.AUDIOFILES_PATH), args.inst,
         args.mdl, args.sr, args.sec)
 
+    # Create model object
     model = Model(sample_rate=args.sr, len_frame=args.lfr, seq_len=args.sql,
         n_rnn_layer=args.layers, hidden_size=args.hidden)
 
+    # Start training
     train(model, data, conf, lr=args.lr, eps=args.eps, num_wav=args.nwav,
         len_frame=args.lfr)
