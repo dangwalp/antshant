@@ -69,10 +69,9 @@ def eval(model, data, sr, len_frame, num_wav, glim, glim_iter, ckpt_path,
             pred_src2_wav = to_wav(pred_src2_mag, mixed_phase, len_hop)
 
         # Write the result
-        # [THIS LEADS TO A TYPE ERROR!]
-        #tf.summary.audio('GT_mixed', mixed_wav, sr, max_outputs=num_wav)
-        #tf.summary.audio('Pred_music', pred_src1_wav, sr, max_outputs=num_wav)
-        #tf.summary.audio('Pred_vocal', pred_src2_wav, sr, max_outputs=num_wav)
+        tf.summary.audio('GT_mixed', mixed_wav, sr, max_outputs=num_wav)
+        tf.summary.audio('Pred_music', pred_src1_wav, sr, max_outputs=num_wav)
+        tf.summary.audio('Pred_vocal', pred_src2_wav, sr, max_outputs=num_wav)
 
         # Compute BSS metrics
         gnsdr, gsir, gsar = bss_eval_global(mixed_wav, src1_wav, src2_wav, pred_src1_wav,
@@ -132,6 +131,10 @@ if __name__ == '__main__':
     # Eval
     parser.add_argument("-nwav", "--num_wav", help="number of input files",
         default=5, type=int, dest='nwav')
+    parser.add_argument("-glim", "--griffin_lim", help="use griffin lim",
+        default=False, action='store_true', dest='glim')
+    parser.add_argument("-gliter", "--griffin_lim_iter", help="griffin lim iterations",
+        default=1000, type=int, dest='gliter')
     args = parser.parse_args()
 
     tconf = get_train_conf()
@@ -143,6 +146,6 @@ if __name__ == '__main__':
         n_rnn_layer=int(tconf['layers']), hidden_size=int(tconf['hidden']))
 
     eval(model, data, sr=int(tconf['sr']), len_frame=int(tconf['lfr']), num_wav=args.nwav,
-        glim=tconf['GRIFFIN_LIM'], glim_iter=int(tconf['GRIFFIN_LIM_ITER']), ckpt_path=tconf['CKPT_PATH'],
+        glim=args.glim, glim_iter=args.gliter, ckpt_path=tconf['CKPT_PATH'],
         graph_path=tconf['GRAPH_PATH'], result_path=tconf['RESULT_PATH'])
 

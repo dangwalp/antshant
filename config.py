@@ -8,8 +8,6 @@ class GeneralConfig:
         self.CKPT_PATH = 'checkpoints/' + case
         self.GRAPH_PATH = 'graphs/' + case
         self.CKPT_STEP = 100
-        self.GRIFFIN_LIM = False
-        self.GRIFFIN_LIM_ITER = 1000
         self.RESULT_PATH = 'results/' + case
         print("Created config: {}".format(case))
 
