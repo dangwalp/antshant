@@ -69,9 +69,10 @@ def eval(model, data, sr, len_frame, num_wav, glim, glim_iter, ckpt_path,
             pred_src2_wav = to_wav(pred_src2_mag, mixed_phase, len_hop)
 
         # Write the result
-        tf.summary.audio('GT_mixed', mixed_wav, sr, max_outputs=num_wav)
-        tf.summary.audio('Pred_music', pred_src1_wav, sr, max_outputs=num_wav)
-        tf.summary.audio('Pred_vocal', pred_src2_wav, sr, max_outputs=num_wav)
+        # [THIS LEADS TO A TYPE ERROR!]
+        #tf.summary.audio('GT_mixed', mixed_wav, sr, max_outputs=num_wav)
+        #tf.summary.audio('Pred_music', pred_src1_wav, sr, max_outputs=num_wav)
+        #tf.summary.audio('Pred_vocal', pred_src2_wav, sr, max_outputs=num_wav)
 
         # Compute BSS metrics
         gnsdr, gsir, gsar = bss_eval_global(mixed_wav, src1_wav, src2_wav, pred_src1_wav,
