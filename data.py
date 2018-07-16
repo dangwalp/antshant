@@ -19,11 +19,11 @@ from preprocess import load_wav
 
 
 class Data:
-    def __init__(self, path, target_inst, med_limit, sr, sec, vis=False):
+    def __init__(self, path, target_inst, med_limit, sr, sec, choose_eval=False, vis=False):
         self.path = path
         self.target_inst = target_inst
         self.med_limit = med_limit
-        self.file_tuples = self.stems_from_yaml()
+        self.file_tuples = self.stems_from_yaml(choose_eval)
         self.pwavs = self.prep_all_wavs(sec, sr)
         if vis:
             self.visualize_wavs(self.pwavs, sr)
@@ -70,7 +70,7 @@ class Data:
             medname.append(med[3])
         return np.array(mixed), np.array(src1), np.array(src2), medname
 
-    def stems_from_yaml(self):
+    def stems_from_yaml(self, choose_eval):
         print("\nRetrieving {} audio files from yaml...".format(self.target_inst))
         yamlfiles = []
         for (root, dirs, files) in walk(self.path):
@@ -79,7 +79,10 @@ class Data:
 
         if len(yamlfiles) == 0:
             raise ValueError("No YAML files found in {}".format(self.path))
-
+        if choose_eval:
+            # Reverse order of files to choose different medleys when evaluating
+            yamlfiles = list(reversed(yamlfiles))
+            
         file_tuples = []
         for y in yamlfiles:
             medley_stems = None

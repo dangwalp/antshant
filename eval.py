@@ -137,7 +137,7 @@ if __name__ == '__main__':
     tconf = get_train_conf()
 
     data = Data("{}/{}".format(tconf['dp'], tconf['AUDIOFILES_PATH']), tconf['inst'],
-        int(tconf['mdl']), int(tconf['sr']), args.sec)
+        int(tconf['mdl']), int(tconf['sr']), args.sec, choose_eval=True)
 
     model = Model(sample_rate=int(tconf['sr']), len_frame=int(tconf['lfr']), seq_len=int(tconf['sql']),
         n_rnn_layer=int(tconf['layers']), hidden_size=int(tconf['hidden']))
