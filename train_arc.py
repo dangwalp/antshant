@@ -22,11 +22,12 @@ def train(model, data, Config, lr, eps, num_wav, len_frame):
 
     # Loss, Optimizer
     global_step = tf.Variable(0, dtype=tf.int32, trainable=False, name='global_step')
-    loss_fn = model.loss()
-    optimizer = tf.train.AdamOptimizer(learning_rate=lr).minimize(loss_fn,
+    optimizer = tf.train.AdamOptimizer(learning_rate=lr).minimize(model.loss,
         global_step=global_step)
+    print("optimizer...")
 
-    summary_op = summaries(model, loss_fn)
+    summary_op = summaries(model, model.loss)
+    print("summaries...")
 
     with tf.Session() as sess:
 
@@ -62,8 +63,7 @@ def train(model, data, Config, lr, eps, num_wav, len_frame):
             l, _, summary = sess.run([loss_fn, optimizer, summary_op],
                                      feed_dict={model.x_mixed: mixed_batch,
                                                 model.y_src1: src1_batch,
-                                                model.y_src2: src2_batch,
-                                                model.freq: freq})
+                                                model.y_src2: src2_batch})
 
             loss.update(l)
             print('step-{}\td_loss={:2.2f}\tloss={}'.format(step, loss.diff * 100,

@@ -16,7 +16,6 @@ class ARCModel:
 
         # Network
         self.seq_len = seq_len
-        self.freq = tf.placeholder(tf.int64, shape=(), name="freq")
         self.net = tf.make_template('net', self._net)
         self()
     
@@ -29,9 +28,10 @@ class ARCModel:
 
         # INPUT: (1025 x T) T=number of temporal frames
         spectro = self.x_mixed
-        dim1 = self.seq_len
-        dim2 = self.freq
+        batch_size = tf.shape(spectro)[0]
+       
         print("input", spectro.shape)
+        print("batch_size", batch_size)
 
         # (output channels, filter size, stride)
         # Conv1: 1D convolution (1024, 3, 1)
@@ -71,35 +71,53 @@ class ARCModel:
         print("conv3", conv3)
 
         # TConv4: 1D transposed convolution (512, 3, 2)
+        filter4 = tf.Variable(tf.random_normal([3,512,256]))
         tconv4 = actv(tf.contrib.nn.conv1d_transpose(value=conv3,
-                                                     filter=512,
-                                                     output_shape = [dim1, dim2, 512],
+                                                     filter= filter4,
+                                                     output_shape = [batch_size, -1, 512],
                                                      stride=2,
+                                                     padding="VALID",
                                                      name='TConv4'))
-        mean4, var4 = tf.nn.moments(conv4,[0])
+        mean4, var4 = tf.nn.moments(tconv4,[0])
         scale4 = tf.Variable(tf.ones([512]))
         beta4 = tf.Variable(tf.zeros([512]))
-        conv4 = tf.nn.batch_normalization(conv4,mean4,var4,beta4,scale4,epsilon)
+        tconv4 = tf.nn.batch_normalization(tconv4,mean4,var4,beta4,scale4,epsilon)
+        print("conv4", tconv4)
 
         # TConv5: 1D transposed convolution (1024, 3, 2)
+        
+        # Transformation matrix
+        self.W3 = tf.get_variable("W3", initializer=tf.random_normal(shape=(1,256,512), dtype=tf.float32)) 
+        trans_conv3 = tf.matmul(conv3, self.W3, name="trans_conv3")
+        
+        # Filters
+        filter5 = tf.Variable(tf.random_normal([3,1024,512]))
         tconv5 = actv(tf.contrib.nn.conv1d_transpose(
-            value=tf.add(tconv4, conv3),
-            filter=1024,
-            output_shape = [dim1, dim2, 1024],
+            value=tf.add(tconv4, trans_conv3),
+            filter=filter5,
+            output_shape = [batch_size, -1, 1024],
             stride=2,
             name='TConv5'))
-        mean5, var5 = tf.nn.moments(conv5,[0])
+        mean5, var5 = tf.nn.moments(tconv5,[0])
         scale5 = tf.Variable(tf.ones([1024]))
         beta5 = tf.Variable(tf.zeros([1024]))
-        conv5 = tf.nn.batch_normalization(conv5,mean5,var5,beta5,scale5,epsilon)
+        tconv5 = tf.nn.batch_normalization(tconv5,mean5,var5,beta5,scale5,epsilon)
+        print("conv5", tconv5)
 
         # Conv6: 1D convolution (4*1025, 3, 1)
+        
+        # Transformation matrix
+        self.W2 = tf.get_variable("W2", initializer=tf.random_normal(shape=(1,512,1024), dtype=tf.float32))
+        trans_conv2 = tf.matmul(conv2, self.W2, name="trans_conv2")
+
+        # Filters
         conv6 = actv(tf.layers.conv1d(
-            value=tf.add(conv2, tconv5),
-            filter=4*1025,
-            output_shape = [dim1, dim2, 4100],
-            stride=1,
+            inputs=tf.add(trans_conv2, tconv5),
+            filters= 4*1025,
+            kernel_size= 3,
+            strides=1,
             name='Conv6'))
+        print("conv6", conv6)
 
         #####
         # Enhancement model
